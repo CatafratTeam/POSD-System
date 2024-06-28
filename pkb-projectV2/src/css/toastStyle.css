@@ -1,0 +1,21 @@
+/* Definisci la classe personalizzata per il toast */
+.toast-custom-style {
+    font-family: 'OCR A Std';
+    background-color: #333;
+    color: #fff;
+    --toastify-color-progress-dark: #fa1e4e;
+  }
+  
+  /* Esempio di stili aggiuntivi */
+.toast-custom-style .Toastify__toast-body {
+    font-size: 16px;
+    font-weight: bold;
+}
+  
+  
+@font-face {
+    font-family: 'OCR A Std';
+    font-style: normal;
+    font-weight: normal;
+    src: local('OCR A Std'), url('OCRAStd.woff') format('woff');
+  }

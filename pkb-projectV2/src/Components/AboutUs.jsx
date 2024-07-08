@@ -24,7 +24,7 @@ function FlippableCard({ image, name, description }) {
     const style = {
         minWidth: 300,
         minHeight: 500,
-        backgroundColor: 'secondary.main',
+        backgroundColor: 'rgba(0, 0, 0, 0.195)', // Semi-transparent background
         color: 'customTextColor.secondary',
         margin: 5,
         display: 'flex',
@@ -32,6 +32,8 @@ function FlippableCard({ image, name, description }) {
         justifyContent: 'space-between',
         boxShadow: '0px 0px 15px #000000',
         borderRadius: '10px',
+        backdropFilter: 'blur(10px)', // Blur effect
+        webkitBackdropFilter: 'blur(10px)' // For Safari support
     }
 
     return (

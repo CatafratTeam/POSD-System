@@ -6,7 +6,7 @@ export default function MainContainer() {
 
   return (
     <div>
-      <Container maxWidth="sm" style={{ height: '145vh' }}>
+      <Container maxWidth="sm" style={{ height: '200vh' }}>
         <UserCard/>
       </Container>
     </div>

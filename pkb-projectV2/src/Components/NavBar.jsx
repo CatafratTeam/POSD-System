@@ -1,23 +1,30 @@
-import AppBar from '@mui/material/AppBar';
-import Box from '@mui/material/Box';
-import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
+import React, { useEffect, useState, useCallback } from 'react';
+import {
+  AppBar, Box, Toolbar, Typography, Button, IconButton, Menu, MenuItem, Modal
+} from '@mui/material';
+import { AccountCircle, NotificationsOutlined as NotificationsOutlinedIcon, CloseOutlined as CloseOutlinedIcon } from '@mui/icons-material';
 import PersonIcon from '@mui/icons-material/Person';
-import SideBar from "./SideBar";
-import CenteredDrawer from "./RegisterLoginDrawer";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useEffect, useState, useCallback } from "react";
-import IconButton from '@mui/material/IconButton';
-import AccountCircle from '@mui/icons-material/AccountCircle';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
 import { Link } from 'react-router-dom';
 import { API_URL } from "../constants";
 import { useDataFetching } from "../utils/dataFetching";
+import SideBar from "./SideBar";
+import CenteredDrawer from "./RegisterLoginDrawer";
 import "../css/toastStyle.css";
+import { useLocation } from 'react-router-dom';
+
+function formatDate(isoDate) {
+  const date = new Date(isoDate);
+  const options = {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  };
+  return date.toLocaleString('it-IT', options);
+}
 
 export default function ButtonAppBar() {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -27,9 +34,13 @@ export default function ButtonAppBar() {
   const [anchorElNotif, setAnchorElNotif] = useState(null);
   const [username, setUsername] = useState("");
   const [notif, setNotif] = useState([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedContent, setSelectedContent] = useState('');
+  const location = useLocation();
 
   const { data: dataNotify, error: errorNotify } = useDataFetching(`${API_URL}/notifications`);
-  if(errorNotify){
+  if (errorNotify) {
     console.log("Unexpected error");
   }
 
@@ -55,7 +66,7 @@ export default function ButtonAppBar() {
   };
 
   const NotifyLogin = useCallback(() => {
-    toast.dark("Login succesfully", {
+    toast.dark("Login successfully", {
       position: "bottom-right",
       autoClose: 2000,
       className: 'toast-custom-style',
@@ -85,6 +96,9 @@ export default function ButtonAppBar() {
         .then(response => response.json())
         .then(data => {
           setUsername(data.username);
+          if (data.username === 'Admin1') {
+            setIsAdmin(true);
+          }
         })
         .catch(error => console.error('Error fetching user data:', error));
     }
@@ -111,11 +125,48 @@ export default function ButtonAppBar() {
     setLoginNotified(false);
     NotifyLogout();
     console.log('Logged out');
+    window.location.href = '/';
+  };
+
+  const handleNotificationClick = (notification) => {
+    const { updatedAt, publishedAt, id, ...filteredNotification } = notification.attributes;
+    filteredNotification.createdAt = formatDate(filteredNotification.createdAt);
+  
+    const content = Object.entries(filteredNotification)
+      .map(([key, value]) => `${value}`)
+      .join('<br/> <br/>');
+  
+    console.log('Notification clicked:', filteredNotification);
+    setSelectedContent(content);
+    setModalOpen(true);
+    handleClose();
+  };  
+  
+
+  const handleModalClose = () => {
+    setModalOpen(false);
+  };
+
+  const modalStyle = {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    boxShadow: '0px 0px 15px #fa1e4e',
+    borderRadius: '10px',
+    p: 4,
+    color: '#ffffff',
+    width: '70vh',
+    maxHeight: '60vh',
+    overflowY: 'auto',
+    backdropFilter: 'blur(15px)', 
+    webkitBackdropFilter: 'blur(15px)', 
+    backgroundColor: 'transparent'
   };
 
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="fixed" sx={{ height: "12vh", opacity: 1 }}>
+      <AppBar position="fixed" sx={{ height: "12vh", backdropFilter: 'blur(15px)', webkitBackdropFilter: 'blur(15px)', backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
         <Toolbar sx={{ height: "100%", alignItems: 'center' }}>
           <SideBar />
           <Typography variant="h4" component="div" sx={{ flexGrow: 1, color: "customTextColor.main" }}>
@@ -167,7 +218,10 @@ export default function ButtonAppBar() {
                       color: 'customTextColor.secondary',
                     },
                   }}
-                >{notification.attributes.message}</MenuItem>
+                  onClick={() => handleNotificationClick(notification)}
+                >
+                  <Typography>Notifica: </Typography>{formatDate(notification.attributes.createdAt)}
+                </MenuItem>
               )) : (
                 <MenuItem
                   sx={{
@@ -215,6 +269,20 @@ export default function ButtonAppBar() {
                       border: "1px solid #fff"
                     },
                   }}>
+                  {isAdmin &&
+                    <Link to="/AdminArea" style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <MenuItem
+                        sx={{
+                          backgroundColor: 'primary.main',
+                          color: 'customTextColor.secondary',
+                          '&:hover': {
+                            backgroundColor: '#262032',
+                            color: 'customTextColor.secondary',
+                          },
+                        }}
+                      >AdminArea</MenuItem>
+                    </Link>
+                  }
                   <Link to="/UserArea" style={{ textDecoration: 'none', color: 'inherit' }}>
                     <MenuItem
                       sx={{
@@ -227,7 +295,8 @@ export default function ButtonAppBar() {
                       }}
                     >My Account</MenuItem>
                   </Link>
-                  <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+                  {location.pathname === '/UserArea' &&
+                    <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
                     <MenuItem sx={{
                       backgroundColor: 'primary.main',
                       color: 'customTextColor.secondary',
@@ -237,7 +306,7 @@ export default function ButtonAppBar() {
                       },
                     }}
                       onClick={handleLogout}>Logout</MenuItem>
-                  </Link>
+                  </Link>}
                 </Menu>
               </>
             ) : (
@@ -250,6 +319,20 @@ export default function ButtonAppBar() {
       </AppBar>
       <CenteredDrawer open={drawerOpen} handleClose={handleDrawerClose} />
       <ToastContainer />
+      <Modal open={modalOpen} onClose={handleModalClose}>
+        <Box sx={modalStyle}>
+          <IconButton
+            onClick={handleModalClose}
+            sx={{ position: 'absolute', top: 8, right: 8, color: '#ffffff' }}
+          >
+            <CloseOutlinedIcon />
+          </IconButton>
+          <Typography id="modal-title" variant="h4" component="h4" color="customTextColor.main" sx={{ paddingBottom: 1 }}>
+            Details
+          </Typography>
+          <Typography dangerouslySetInnerHTML={{ __html: selectedContent }} />
+        </Box>
+      </Modal>
     </Box>
   );
 }

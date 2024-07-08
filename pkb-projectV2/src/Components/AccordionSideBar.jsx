@@ -6,27 +6,25 @@ import ListItemButton from '@mui/material/ListItemButton';
 import Modal from '@mui/material/Modal';
 import IconButton from '@mui/material/IconButton';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import { useState, useEffect } from 'react';
-import { API_URL } from "../constants";
-import { useDataFetching } from "../utils/dataFetching";
+import BookmarkIcon from '@mui/icons-material/Bookmark';
+import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
+import { useState } from 'react';
+import { useDataContext } from '../utils/DataContext';
+import { API_URL } from '../constants';
+import axios from 'axios';
+import Tooltip from '@mui/material/Tooltip';
 
 export default function ContentPage() {
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedContent, setSelectedContent] = useState(null);
-    const [data, setData] = useState({});
-    const [isLoading, setIsLoading] = useState(true);
+    const [isSaved, setIsSaved] = useState(false);
 
-    const { data: dataArticles, error: errorArticles } = useDataFetching(`${API_URL}/articoli-gdprs`);
-    const { data: dataISO, error: errorISO } = useDataFetching(`${API_URL}/isos`);
-    const { data: dataCWEs, error: errorCWEs } = useDataFetching(`${API_URL}/cwes`);
-    const { data: dataMVCs, error: errorMVCs } = useDataFetching(`${API_URL}/mvcs`);
-    const { data: dataOWASPs, error: errorOWASPs } = useDataFetching(`${API_URL}/owasps`);
-    const { data: dataPatterns, error: errorPatterns } = useDataFetching(`${API_URL}/patterns`);
-    const { data: dataPBDs, error: errorPBDs } = useDataFetching(`${API_URL}/pbds`);
-    const { data: dataStrategie, error: errorStrategie } = useDataFetching(`${API_URL}/strategies`);
+    const { dataArticles, dataISOs, dataCWEs, dataMVCs, dataOWASPs, dataPatterns, dataPBDs, dataStrategies } = useDataContext();
 
     const style = {
-        backgroundColor: '#0c0a10',
+        backdropFilter: 'blur(15px)',
+        webkitBackdropFilter: 'blur(15px)',
+        backgroundColor: 'transparent',
         color: 'customTextColor.secondary',
         fontFamily: 'fontFamily'
     };
@@ -36,7 +34,6 @@ export default function ContentPage() {
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        bgcolor: '#0c0a10',
         boxShadow: '0px 0px 15px #fa1e4e',
         borderRadius: '10px',
         p: 4,
@@ -44,66 +41,73 @@ export default function ContentPage() {
         width: '100vh',
         height: '60vh',
         overflowY: 'auto',
+        backdropFilter: 'blur(15px)',
+        webkitBackdropFilter: 'blur(15px)',
+        backgroundColor: 'transparent'
     };
 
-    useEffect(() => {
-        if (dataArticles && dataISO && dataCWEs && dataOWASPs) {
-            const formattedArticles = dataArticles.data
-                .map(item => ({
-                    text: `${item.attributes.numeroArticolo}: ${item.attributes.Articolo}`,
-                    content: item.attributes.Articolo,
-                    numero: item.attributes.numeroArticolo
-                }))
-                .sort((a, b) => a.numero - b.numero);
+    const formatData = (rawData, type) => {
+        if (!rawData) return [];
 
-            const formattedISO = dataISO.data
-                .map(item => ({
-                    text: `${item.attributes.numero}: ${item.attributes.Iso}`,
-                    content: item.attributes.Iso,
-                    numero: item.attributes.numero
-                }))
-                .sort((a, b) => a.numero - b.numero);
+        const formattedData = rawData.data.map(item => {
+            switch (type) {
+                case 'articles':
+                    return {
+                        Numero: item.attributes.numeroArticolo,
+                        Articolo: item.attributes.Articolo
+                    };
+                case 'iso':
+                    return {
+                        Numero: item.attributes.numero,
+                        Iso: item.attributes.Iso
+                    };
+                case 'cwe':
+                    return {
+                        Codice: item.attributes.Codice,
+                        Descrizione: item.attributes.Descrizione
+                    };
+                case 'owasp':
+                    return {
+                        Numero: item.attributes.numero,
+                        Owasp: item.attributes.owasp
+                    };
+                case 'patterns':
+                    return {
+                        Name: item.attributes.Name,
+                        Description: item.attributes.Description,
+                        Context: item.attributes.Context,
+                        Example: item.attributes.Example
+                    };
+                case 'mvcs':
+                    return {
+                        MVC: item.attributes.MVC
+                    };
+                case 'pbds':
+                    return {
+                        PBD: item.attributes.PBD
+                    };
+                case 'strategies':
+                    return {
+                        Strategies: item.attributes.strategies
+                    };
+                default:
+                    return {};
+            }
+        });
 
-            const formattedCWE = dataCWEs.data
-                .map(item => ({
-                    text: `${item.attributes.Codice}: ${item.attributes.Descrizione}`,
-                    content: item.attributes.Descrizione,
-                    numero: item.attributes.Codice
-                }))
-                .sort((a, b) => a.numero - b.numero);
+        return formattedData.sort((a, b) => a.Numero - b.Numero);
+    };
 
-            const formattedOWASPs = dataOWASPs.data
-                .map(item => ({
-                    text: `${item.attributes.numero}: ${item.attributes.owasp}`,
-                    content: item.attributes.owasp,
-                    numero: item.attributes.numero
-                }))
-                .sort((a, b) => a.numero - b.numero);
+    const formattedArticles = formatData(dataArticles, 'articles');
+    const formattedISO = formatData(dataISOs, 'iso');
+    const formattedCWE = formatData(dataCWEs, 'cwe');
+    const formattedOWASPs = formatData(dataOWASPs, 'owasp');
+    const formattedPatterns = formatData(dataPatterns, 'patterns');
+    const formattedMVCs = dataMVCs ? dataMVCs.data : [];
+    const formattedPBDs = dataPBDs ? dataPBDs.data : [];
+    const formattedStrategies = dataStrategies ? dataStrategies.data : [];
 
-            const formattedPatterns = dataPatterns.data
-                .map(item => ({
-                    text: item.attributes.Name,
-                    content: `<font color="#fa1e4e">${item.attributes.Name}</font><br><br><font color="#fa1e4e">Description:</font> ${item.attributes.Description}<br><br><font color="#fa1e4e">Context:</font> ${item.attributes.Context}<br><br><font color="#fa1e4e">Example: </font>${item.attributes.Example}`,
-                }));
-
-            setData({
-                articles: formattedArticles,
-                iso: formattedISO,
-                cwes: formattedCWE,
-                owasps: formattedOWASPs,
-                mvcs: dataMVCs.data,
-                patterns: formattedPatterns,
-                pbds: dataPBDs.data,
-                strategies: dataStrategie.data
-            });
-
-            setIsLoading(false);
-        }
-
-        if (errorArticles || errorISO || errorCWEs || errorOWASPs || errorMVCs || errorPBDs || errorPatterns || errorStrategie) {
-            console.error('Error fetching data:', errorArticles || errorISO || errorCWEs || errorOWASPs || errorMVCs || errorPBDs || errorPatterns || errorStrategie);
-        }
-    }, [dataArticles, dataISO, dataCWEs, dataOWASPs, dataMVCs, dataPBDs, dataPatterns, dataStrategie, errorArticles, errorISO, errorCWEs, errorOWASPs, errorMVCs, errorPBDs, errorPatterns, errorStrategie]);
+    const isLoading = !dataArticles || !dataISOs || !dataCWEs || !dataOWASPs || !dataMVCs || !dataPBDs || !dataPatterns || !dataStrategies;
 
     if (isLoading) {
         return <div>Loading...</div>;
@@ -112,7 +116,84 @@ export default function ContentPage() {
     const handleItemClick = (content) => () => {
         setSelectedContent(content);
         setModalOpen(true);
+        setIsSaved(false);
     };
+
+    const handleBookmarkClick = async (pattern) => {
+        const token = localStorage.getItem('token');
+        var userData, patternIds;
+        if (token) {
+            try {
+                const response = await fetch(`${API_URL}/users/me`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user data');
+                }
+                userData = await response.json();
+            } catch (error) {
+                console.error('Error fetching or logging data:', error);
+                return;
+            }
+    
+            if (isSaved === false) {
+                try {
+                    const requestData = {
+                        data: {
+                            username: userData.username,
+                            Name: pattern.Name,
+                            Context: pattern.Context,
+                            Description: pattern.Description,
+                            Example: pattern.Example
+                        }
+                    };
+                    await axios.post(`${API_URL}/preferitis`, requestData, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                        }
+                    });
+                    setIsSaved(true);
+                } catch (error) {
+                    console.error('Error saving pattern:', error);
+                }
+            } else {
+                try {
+                    const response = await fetch(`${API_URL}/preferitis?filters[username][$eq]=${userData.username}&filters[Name][$eq]=${pattern.Name}`);
+                    if (response.ok) {
+                        const patternsData = await response.json();
+                        patternIds = patternsData.data.map(pattern => pattern.id);
+                    } else {
+                        console.error('Error fetching patterns:', response.status, response.statusText);
+                    }
+                } catch (error) {
+                    console.error('Error fetching patterns:', error);
+                    return;
+                }
+    
+                for (const id of patternIds) {
+                    try {
+                        const response = await fetch(`${API_URL}/preferitis/${id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        if (response.ok) {
+                            setIsSaved(false);
+                        } else {
+                            console.error('Failed to delete pattern:', response.statusText);
+                        }
+                    } catch (error) {
+                        console.error('Error deleting pattern:', error);
+                    }
+                }
+            }
+        }
+    };
+    
 
     return (
         <Box>
@@ -131,7 +212,7 @@ export default function ContentPage() {
                     <Typography sx={{ color: '#ffffff', transition: 'color 0.3s' }}>Articoli GDPR</Typography>
                 </AccordionSummary>
                 <AccordionDetails sx={{ display: 'flex', flexDirection: 'column' }}>
-                    {data.articles.map((article, index) => (
+                    {formattedArticles.map((article, index) => (
                         <ListItemButton
                             key={index}
                             sx={{
@@ -141,7 +222,7 @@ export default function ContentPage() {
                             }}
                         >
                             <Typography variant="body2" sx={{ fontSize: '0.8rem', marginBottom: '8px' }}>
-                                {article.text}
+                                {`${article.Numero}: ${article.Articolo}`}
                             </Typography>
                         </ListItemButton>
                     ))}
@@ -162,7 +243,7 @@ export default function ContentPage() {
                     <Typography sx={{ color: '#ffffff', transition: 'color 0.3s' }}>ISO</Typography>
                 </AccordionSummary>
                 <AccordionDetails sx={{ display: 'flex', flexDirection: 'column' }}>
-                    {data.iso.map((iso, index) => (
+                    {formattedISO.map((iso, index) => (
                         <ListItemButton
                             key={index}
                             sx={{
@@ -172,7 +253,7 @@ export default function ContentPage() {
                             }}
                         >
                             <Typography variant="body2" sx={{ fontSize: '0.8rem', marginBottom: '8px' }}>
-                                {iso.text}
+                                {`${iso.Numero}: ${iso.Iso}`}
                             </Typography>
                         </ListItemButton>
                     ))}
@@ -193,7 +274,7 @@ export default function ContentPage() {
                     <Typography sx={{ color: '#ffffff', transition: 'color 0.3s' }}>CWE</Typography>
                 </AccordionSummary>
                 <AccordionDetails sx={{ display: 'flex', flexDirection: 'column' }}>
-                    {data.cwes.map((cwe, index) => (
+                    {formattedCWE.map((cwe, index) => (
                         <ListItemButton
                             key={index}
                             sx={{
@@ -203,7 +284,7 @@ export default function ContentPage() {
                             }}
                         >
                             <Typography variant="body2" sx={{ fontSize: '0.8rem', marginBottom: '8px' }}>
-                                {cwe.text}
+                                {`${cwe.Codice}: ${cwe.Descrizione}`}
                             </Typography>
                         </ListItemButton>
                     ))}
@@ -221,10 +302,10 @@ export default function ContentPage() {
                         }
                     }}
                 >
-                    <Typography sx={{ color: '#ffffff', transition: 'color 0.3s' }}>MVC</Typography>
+                    <Typography sx={{ color: '#ffffff', transition: 'color 0.3s' }}>OWASP</Typography>
                 </AccordionSummary>
                 <AccordionDetails sx={{ display: 'flex', flexDirection: 'column' }}>
-                    {data.mvcs.map((mvc, index) => (
+                    {formattedOWASPs.map((owasp, index) => (
                         <ListItemButton
                             key={index}
                             sx={{
@@ -234,7 +315,7 @@ export default function ContentPage() {
                             }}
                         >
                             <Typography variant="body2" sx={{ fontSize: '0.8rem', marginBottom: '8px' }}>
-                                {mvc.attributes.MVC}
+                                {`${owasp.Numero}: ${owasp.Owasp}`}
                             </Typography>
                         </ListItemButton>
                     ))}
@@ -252,12 +333,13 @@ export default function ContentPage() {
                         }
                     }}
                 >
-                    <Typography sx={{ color: '#ffffff', transition: 'color 0.3s' }}>OWASP</Typography>
+                    <Typography sx={{ color: '#ffffff', transition: 'color 0.3s' }}>Patterns</Typography>
                 </AccordionSummary>
                 <AccordionDetails sx={{ display: 'flex', flexDirection: 'column' }}>
-                    {data.owasps.map((owasp, index) => (
+                    {formattedPatterns.map((pattern, index) => (
                         <ListItemButton
                             key={index}
+                            onClick={handleItemClick(pattern)}
                             sx={{
                                 color: '#ffffff',
                                 transition: 'color 0.3s',
@@ -265,7 +347,7 @@ export default function ContentPage() {
                             }}
                         >
                             <Typography variant="body2" sx={{ fontSize: '0.8rem', marginBottom: '8px' }}>
-                                {owasp.text}
+                                {`${pattern.Name}`}
                             </Typography>
                         </ListItemButton>
                     ))}
@@ -283,13 +365,12 @@ export default function ContentPage() {
                         }
                     }}
                 >
-                    <Typography sx={{ color: '#ffffff', transition: 'color 0.3s' }}>Pattern</Typography>
+                    <Typography sx={{ color: '#ffffff', transition: 'color 0.3s' }}>MVCs</Typography>
                 </AccordionSummary>
                 <AccordionDetails sx={{ display: 'flex', flexDirection: 'column' }}>
-                    {data.patterns.map((pattern, index) => (
+                    {formattedMVCs.map((mvc, index) => (
                         <ListItemButton
                             key={index}
-                            onClick={handleItemClick(pattern.content)}
                             sx={{
                                 color: '#ffffff',
                                 transition: 'color 0.3s',
@@ -297,7 +378,7 @@ export default function ContentPage() {
                             }}
                         >
                             <Typography variant="body2" sx={{ fontSize: '0.8rem', marginBottom: '8px' }}>
-                                {pattern.text}
+                                {`${mvc.attributes.MVC}`}
                             </Typography>
                         </ListItemButton>
                     ))}
@@ -315,10 +396,10 @@ export default function ContentPage() {
                         }
                     }}
                 >
-                    <Typography sx={{ color: '#ffffff', transition: 'color 0.3s' }}>PBD</Typography>
+                    <Typography sx={{ color: '#ffffff', transition: 'color 0.3s' }}>PBDs</Typography>
                 </AccordionSummary>
                 <AccordionDetails sx={{ display: 'flex', flexDirection: 'column' }}>
-                    {data.pbds.map((pbd, index) => (
+                    {formattedPBDs.map((pbd, index) => (
                         <ListItemButton
                             key={index}
                             sx={{
@@ -328,7 +409,7 @@ export default function ContentPage() {
                             }}
                         >
                             <Typography variant="body2" sx={{ fontSize: '0.8rem', marginBottom: '8px' }}>
-                                {pbd.attributes.PBD}
+                                {`${pbd.attributes.PBD}`}
                             </Typography>
                         </ListItemButton>
                     ))}
@@ -346,10 +427,10 @@ export default function ContentPage() {
                         }
                     }}
                 >
-                    <Typography sx={{ color: '#ffffff', transition: 'color 0.3s' }}>Strategy</Typography>
+                    <Typography sx={{ color: '#ffffff', transition: 'color 0.3s' }}>Strategies</Typography>
                 </AccordionSummary>
                 <AccordionDetails sx={{ display: 'flex', flexDirection: 'column' }}>
-                    {data.strategies.map((strategy, index) => (
+                    {formattedStrategies.map((strategy, index) => (
                         <ListItemButton
                             key={index}
                             sx={{
@@ -359,24 +440,50 @@ export default function ContentPage() {
                             }}
                         >
                             <Typography variant="body2" sx={{ fontSize: '0.8rem', marginBottom: '8px' }}>
-                                {strategy.attributes.Name}
+                                {`${strategy.attributes.Name}: ${strategy.attributes.Description}`}
                             </Typography>
                         </ListItemButton>
                     ))}
                 </AccordionDetails>
             </Accordion>
-            <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
+            <Modal
+                open={modalOpen}
+                onClose={() => setModalOpen(false)}
+                aria-labelledby="modal-title"
+                aria-describedby="modal-description"
+            >
                 <Box sx={modalStyle}>
                     <IconButton
+                        aria-label="close"
                         onClick={() => setModalOpen(false)}
-                        sx={{ position: 'absolute', top: 8, right: 8, color: '#ffffff' }}
+                        sx={{
+                            position: 'absolute',
+                            top: 10,
+                            right: 10,
+                            color: 'white'
+                        }}
                     >
                         <CloseOutlinedIcon />
                     </IconButton>
-                    <Typography id="modal-title" variant="h4" component="h4" color="customTextColor.main" sx={{ paddingBottom: 1 }}>
-                        Details
+                    {localStorage.getItem('token') &&
+                        <IconButton
+                            onClick={() => handleBookmarkClick(selectedContent)}
+                            sx={{ color: 'customTextColor.main' }}
+                        >
+                            {isSaved ? <Tooltip title="Saved"><BookmarkIcon /></Tooltip> : <Tooltip title="Save"><BookmarkBorderIcon /></Tooltip>}
+                        </IconButton>}
+                    <Typography id="modal-title" variant="h6" component="h2">
+                        {selectedContent?.Name}
                     </Typography>
-                    <Typography dangerouslySetInnerHTML={{ __html: selectedContent }} />
+                    <Typography id="modal-description" sx={{ mt: 2 }}>
+                        {selectedContent?.Description}
+                    </Typography>
+                    <Typography id="modal-context" sx={{ mt: 2 }}>
+                        {selectedContent?.Context}
+                    </Typography>
+                    <Typography id="modal-example" sx={{ mt: 2 }}>
+                        {selectedContent?.Example}
+                    </Typography>
                 </Box>
             </Modal>
         </Box>

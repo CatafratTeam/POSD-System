@@ -10,7 +10,6 @@ import ListItem from '@mui/material/ListItem';
 import ContentPage from './AccordionSideBar';
 import '../css/index.css';
 
-
 export default function SideBar() {
   const [open, setOpen] = useState(false);
 
@@ -22,11 +21,15 @@ export default function SideBar() {
     width: 250,
     height: '100%',
     overflowY: 'auto',
-    backgroundColor: 'primary.main',
+    backgroundColor: 'rgba(0, 0, 0, 0.195)',  // Semi-transparent background
+    backdropFilter: 'blur(15px)',           // Blur effect
+    WebkitBackdropFilter: 'blur(15px)',     // Blur effect for Safari
     color: '#ffffff',
     padding: 1,
     borderRight: 'solid 1px #fa1e4e',
-    boxShadow: '0px 0px 15px #fa1e4e'
+    boxShadow: '0px 0px 15px #fa1e4e',
+    top: 0,
+    left: 0
   };
 
   const DrawerList = (
@@ -72,6 +75,14 @@ export default function SideBar() {
         anchor="left"
         open={open}
         onClose={toggleDrawer(false)}
+        PaperProps={{
+          sx: {
+            backgroundColor: 'transparent',
+            backdropFilter: 'blur(15px)',
+            WebkitBackdropFilter: 'blur(15px)',
+            color: '#ffffff',
+          }
+        }}
       >
         {DrawerList}
       </Drawer>

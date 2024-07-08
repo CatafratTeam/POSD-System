@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Button from '@mui/material/Button';
@@ -11,14 +11,16 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
+import Modal from '@mui/material/Modal';
+import Grid from '@mui/material/Grid';
 import axios from 'axios';
 import { API_URL } from "../constants";
-import { useQuery, gql } from '@apollo/client';
+import { useDataFetching } from '../utils/dataFetching';
 
 const style = {
     minWidth: 800,
     minHeight: 280,
-    backgroundColor: 'secondary.main',
+    backgroundColor: 'rgba(0, 0, 0, 0.195)', // Semi-transparent background
     color: 'customTextColor.secondary',
     margin: 5,
     display: 'flex',
@@ -26,8 +28,26 @@ const style = {
     justifyContent: 'space-between',
     boxShadow: '0px 0px 5px #fa1e4e',
     borderRadius: '10px',
+    backdropFilter: 'blur(15px)', // Blur effect
+    webkitBackdropFilter: 'blur(15px)' // For Safari support
 };
 
+const modalStyle = {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    boxShadow: '0px 0px 15px #fa1e4e',
+    borderRadius: '10px',
+    p: 4,
+    color: '#ffffff',
+    width: '100vh',
+    height: '60vh',
+    overflowY: 'auto',
+    backdropFilter: 'blur(15px)',
+    webkitBackdropFilter: 'blur(15px)',
+    backgroundColor: 'transparent'
+};
 
 const textFieldStyle = {
     '& .MuiOutlinedInput-root': {
@@ -79,30 +99,17 @@ function formatDate(isoDate) {
     return date.toLocaleString('it-IT', options);
 }
 
-const GET_LOGS = gql`
-    query ($value: String!) {
-        logs(filters: { username: { eq: $value } }) {
-            data {
-                attributes {
-                    username
-                    Query
-                    createdAt
-                }
-            }
-        }
-    }`;
-
 export default function UserCard() {
     const [user, setUser] = useState({ username: "", email: "", createdAt: "" });
     const [isPasswordFieldEnabled, setIsPasswordFieldEnabled] = useState(false);
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [logs, setLogs] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [favorites, setFavorites] = useState([]);
+    const [selectedFavorite, setSelectedFavorite] = useState(null);
+    const [modalOpen, setModalOpen] = useState(false);
 
-    const { loading, error, data } = useQuery(GET_LOGS, {
-        variables: { value: user.username },
-        skip: !user.username
-    });
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
@@ -115,22 +122,45 @@ export default function UserCard() {
                 .then(response => response.json())
                 .then(data => {
                     setUser(data);
-                    console.log(data);
                 })
                 .catch(error => console.error('Error fetching user data:', error));
         }
     }, []);
 
+    const { data: logData, error } = useDataFetching(`${API_URL}/logs?filters[username][$eq]=${user.username}`);
+
     useEffect(() => {
-        if (data) {
-            setLogs(data.logs.data.map(log => ({
+        if (logData) {
+            setLogs(logData.data.map(log => ({
                 username: log.attributes.username,
                 query: log.attributes.Query,
                 createdAt: formatDate(log.attributes.createdAt)
             })));
+            setIsLoading(false);
         }
-    }, [data]);
+    }, [logData]);
 
+    const fetchFavorites = useCallback(async () => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            try {
+                const response = await axios.get(`${API_URL}/preferitis?filters[username][$eq]=${user.username}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                setFavorites(response.data.data);
+            } catch (error) {
+                console.error('Error fetching favorites:', error);
+            }
+        }
+    }, [user.username]);
+
+    useEffect(() => {
+        if (user.username) {
+            fetchFavorites();
+        }
+    }, [user.username, fetchFavorites]);
 
     const handleCurrentPasswordChange = (event) => {
         setCurrentPassword(event.target.value);
@@ -167,15 +197,37 @@ export default function UserCard() {
         }
     };
 
+    const handleFavoriteClick = (favorite) => {
+        setSelectedFavorite(favorite);
+        setModalOpen(true);
+    };
+
+    const handleFavoriteDelete = async (id) => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            try {
+                await axios.delete(`${API_URL}/preferitis/${id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                fetchFavorites();
+                setModalOpen(false);
+            } catch (error) {
+                console.error('Error deleting favorite:', error);
+            }
+        }
+    };
+
     return (
         <Box sx={{
             height: '100vh',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            paddingTop: '60vh',
+            paddingTop: '100vh',
             flexDirection: 'column',
-            boxSizing: 'border-box'
+            boxSizing: 'border-box',
         }}>
             <Typography color="customTextColor.main" fontSize='2em'>[ User Info ]</Typography >
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -294,36 +346,40 @@ export default function UserCard() {
                 </Card>
             </Box>
             <Typography color="customTextColor.main" fontSize='2em'>[ Logs ]</Typography >
-            {loading ? (
+            {isLoading ? (
                 <Typography>Loading...</Typography>
             ) : error ? (
                 <Typography>Error: {error.message}</Typography>
             ) : (
-                <Box sx={{
-                    minWidth: 800,
-                    minHeight: 280,
-                    backgroundColor: '#1b1724',
-                    color: '#e7edf1',
-                    margin: 5,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    boxShadow: '0px 0px 15px #00000',
-                    borderRadius: '10px',
-                    maxHeight: 400
-                }}>
-                    <TableContainer component={Paper} sx={{ flexGrow: 1, overflowY: 'auto', backgroundColor: '#1b1724' }}>
+                <Box
+                    sx={{
+                        minWidth: 800,
+                        minHeight: 280,
+                        backgroundColor: 'rgba(0, 0, 0, 0.195)',
+                        color: '#e7edf1',
+                        margin: 5,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        boxShadow: '0px 0px 15px #000000',
+                        borderRadius: '10px',
+                        maxHeight: 400,
+                        backdropFilter: 'blur(10px)',
+                        WebkitBackdropFilter: 'blur(10px)',
+                    }}
+                >
+                    <TableContainer component={Paper} sx={{ flexGrow: 1, overflowY: 'auto', backgroundColor: 'rgba(0, 0, 0, 0.195)' }}>
                         <Table sx={{ minWidth: '70vh' }} aria-label="simple table">
                             <TableHead>
-                            <TableRow sx={{ '&:nth-of-type(odd)': { backgroundColor: 'secondary.main' }, '&:nth-of-type(even)': { backgroundColor: '#1b1724' }, borderBottom: '1px solid #3a3544' }}>
+                                <TableRow sx={{ backgroundColor: 'transparent', borderBottom: '1px solid #3a3544' }}>
                                     <TableCell sx={{ color: '#fa1e4e', fontSize: 20 }}>Username</TableCell>
                                     <TableCell align="left" sx={{ color: '#fa1e4e', fontSize: 20 }}>Query</TableCell>
-                                    <TableCell align="left" sx={{ color: '#fa1e4e'}}>Search Date</TableCell>
+                                    <TableCell align="left" sx={{ color: '#fa1e4e', fontSize: 20 }}>Search Date</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
                                 {logs.map((log, index) => (
-                                    <TableRow key={index} sx={{ '&:nth-of-type(odd)': { backgroundColor: 'secondary.main' }, '&:nth-of-type(even)': { backgroundColor: '#1b1724' }, borderBottom: '1px solid #3a3544' }}>
+                                    <TableRow key={index} sx={{ backgroundColor: 'transparent', borderBottom: '1px solid #3a3544' }}>
                                         <TableCell component="th" scope="row" sx={{ color: '#e7edf1', borderBottom: 'none' }}>
                                             {log.username}
                                         </TableCell>
@@ -335,8 +391,86 @@ export default function UserCard() {
                         </Table>
                     </TableContainer>
                 </Box>
-                
             )}
+            <Typography color="customTextColor.main" fontSize='2em'>[ Favorites ]</Typography >
+            <Grid container spacing={2} justifyContent="center" marginTop={2}>
+                {favorites.map(favorite => (
+                    <Grid item key={favorite.id} xs={12} style={{ marginBottom: '1rem' }}>
+                        <Card
+                            sx={{
+                                width: '100%',
+                                height: 'auto',
+                                backgroundColor: 'rgba(0, 0, 0, 0.195)',
+                                color: '#e7edf1',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexDirection: 'column',
+                                cursor: 'pointer',
+                                boxShadow: '0px 0px 5px #fa1e4e',
+                                borderRadius: '10px',
+                                backdropFilter: 'blur(15px)',
+                                WebkitBackdropFilter: 'blur(15px)',
+                                padding: '1rem',
+                            }}
+                            onClick={() => handleFavoriteClick(favorite)}
+                        >
+                            <Typography
+                                sx={{
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    textAlign: 'center',
+                                }}
+                            >
+                                {favorite.attributes.Name}
+                            </Typography>
+                        </Card>
+                    </Grid>
+                ))}
+            </Grid>
+
+
+
+            <Modal
+                open={modalOpen}
+                onClose={() => setModalOpen(false)}
+                aria-labelledby="modal-modal-title"
+                aria-describedby="modal-modal-description"
+            >
+                <Box sx={modalStyle}>
+                    {selectedFavorite && (
+                        <>
+                            <Typography id="modal-modal-title" variant="h6" component="h2" sx={{ color: 'customTextColor.main' }}>
+                                {selectedFavorite.attributes.Name}
+                            </Typography>
+                            <Typography sx={{ mt: 2 }}>
+                                {selectedFavorite.attributes.Description}
+                            </Typography>
+                            <Typography sx={{ mt: 2 }}>
+                                {selectedFavorite.attributes.Context}
+                            </Typography>
+                            <Typography sx={{ mt: 2 }}>
+                                {selectedFavorite.attributes.Example}
+                            </Typography>
+                            <Button
+                                variant="contained"
+                                onClick={() => handleFavoriteDelete(selectedFavorite.id)}
+                                sx={{
+                                    backgroundColor: '#fa1e4e',
+                                    color: '#fff',
+                                    '&:hover': {
+                                        backgroundColor: '#d0173c',
+                                    },
+                                    marginTop: 2
+                                }}
+                            >
+                                Delete
+                            </Button>
+                        </>
+                    )}
+                </Box>
+            </Modal>
         </Box>
     );
 }

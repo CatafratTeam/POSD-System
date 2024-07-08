@@ -18,11 +18,12 @@ const style = {
     left: '50%',
     transform: 'translate(-50%, -50%)',
     width: 400,
-    boxShadow: '0px 0px 15px #fa1e4e',
+    boxShadow: '0px 0px 5px #fa1e4e',
     p: 4,
-    backgroundColor: 'primary.main',
     color: 'customTextColor.secondary',
-    borderRadius: '10px'
+    borderRadius: '10px',
+    backdropFilter: 'blur(15px)', // Blur effect
+    webkitBackdropFilter: 'blur(15px)' // For Safari support
 };
 
 

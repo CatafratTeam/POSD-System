@@ -4,9 +4,8 @@ import './css/index.css';
 import reportWebVitals from './reportWebVitals';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { BrowserRouter } from 'react-router-dom';
-import { ApolloProvider } from '@apollo/client';
-import client from './utils/apolloClient';
 import RoutesPath from './routes';
+import { DataProvider } from './utils/DataContext';
 
 const theme = createTheme({
   palette: {
@@ -34,13 +33,13 @@ const theme = createTheme({
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <ThemeProvider theme={theme}>
-    <ApolloProvider client={client}>
+    <DataProvider>
       <React.StrictMode>
         <BrowserRouter>
           <RoutesPath />
         </BrowserRouter>
       </React.StrictMode>
-    </ApolloProvider>
+    </DataProvider>
   </ThemeProvider>
 );
 

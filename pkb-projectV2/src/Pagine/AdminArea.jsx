@@ -1,10 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { API_URL } from "../constants";
+import AdminAppBar from '../Components/AdminAppBar';
+import MainContainer from '../Components/MainContainerAdminArea';
 
-export default function AdminArea(){
+export default function AdminArea() {
+    const [selectedButtonValue, setSelectedButtonValue] = useState('articoli-gdprs');
 
     useEffect(() => {
-        console.log("diocan");
         const token = localStorage.getItem('token');
         if (token) {
             fetch(`${API_URL}/users/me`, {
@@ -15,8 +17,7 @@ export default function AdminArea(){
             })
                 .then(response => response.json())
                 .then(data => {
-                    console.log(data);
-                    if(data.username !== 'Admin1'){
+                    if (data.username !== 'Admin1') {
                         window.location.href = '*';
                     }
                 })
@@ -26,9 +27,14 @@ export default function AdminArea(){
         }
     }, []);
 
+    const handleButtonClick = (value) => {
+        setSelectedButtonValue(value);
+    };
+
     return (
         <div className="homePage">
-            <h1>diocan</h1>
+            <AdminAppBar onButtonClick={handleButtonClick} initialButtonValue={selectedButtonValue} />
+            <MainContainer selectedButtonValue={selectedButtonValue} />
         </div>
-    )
+    );
 }

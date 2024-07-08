@@ -9,9 +9,7 @@ import Select from '@mui/material/Select';
 import FormControl from '@mui/material/FormControl';
 import MenuItem from '@mui/material/MenuItem';
 import { API_URL } from "../constants";
-import { useDataFetching } from "../utils/dataFetching";
-import { useLazyQuery } from '@apollo/client';
-import * as queries from '../utils/queries';
+import { useDataContext } from '../utils/DataContext';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Grid from '@mui/material/Grid';
@@ -19,193 +17,9 @@ import CloseIcon from '@mui/icons-material/Close';
 import Modal from '@mui/material/Modal';
 import axios from 'axios';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-
-const useDynamicQuery = (categoryFrom, att, value, categoryTo) => {
-    const [executeQuery, { data, loading, error }] = useLazyQuery(queries.QUERY_GET_ARTICOLO);
-    useEffect(() => {
-        let queryToExecute = null;
-        switch (categoryTo) {
-            case 'articoli_gdprs':
-                switch (categoryFrom) {
-                    case 'articoliGdprs': queryToExecute = queries.QUERY_GET_ARTICOLO; break;
-                    case 'isos': queryToExecute = queries.QUERY_ISO_TO_ARTICOLOGDPR; break;
-                    case 'cwes': queryToExecute = queries.QUERY_CWE_TO_ARTICOLOGDPR; break;
-                    case 'mvcs': queryToExecute = queries.QUERY_MVC_TO_ARTICOLOGDPR; break;
-                    case 'owasps': queryToExecute = queries.QUERY_OWASP_TO_ARTICOLOGDPR; break;
-                    case 'patterns':
-                        switch (att) {
-                            case 'Name': queryToExecute = queries.QUERY_PATTERNNAME_TO_ARTICOLOGDPR; break;
-                            case 'Context': queryToExecute = queries.QUERY_PATTERNCONTEXT_TO_ARTICOLOGDPR; break;
-                            case 'Description': queryToExecute = queries.QUERY_PATTERNDESCRIPTION_TO_ARTICOLOGDPR; break;
-                            default:
-                        } break;
-                    case 'pbds': queryToExecute = queries.QUERY_PBD_TO_ARTICOLOGDPR; break;
-                    case 'strategies': queryToExecute = queries.QUERY_STRATEGIA_TO_ARTICOLOGDPR; break;
-                    default: queryToExecute = queries.QUERY_GET_ALL_ARTICOLO;
-                } break;
-
-            case 'isos':
-                switch (categoryFrom) {
-                    case 'articoliGdprs': queryToExecute = queries.QUERY_ARTICOLO_TO_ISO; break;
-                    case 'isos': queryToExecute = queries.QUERY_GET_ISO; break;
-                    case 'cwes': queryToExecute = queries.QUERY_CWE_DESCRIPTION_TO_ISO; break;
-                    case 'mvcs': queryToExecute = queries.QUERY_MVC_TO_ISO; break;
-                    case 'owasps': queryToExecute = queries.QUERY_OWASP_TO_ISO; break;
-                    case 'patterns':
-                        switch (att) {
-                            case 'Name': queryToExecute = queries.QUERY_PATTERN_NAME_TO_ISO; break;
-                            case 'Context': queryToExecute = queries.QUERY_PATTERN_CONTEXT_TO_ISO; break;
-                            case 'Description': queryToExecute = queries.QUERY_PATTERN_DESCRIPTION_TO_ISO; break;
-                            default:
-                        } break;
-                    case 'pbds': queryToExecute = queries.QUERY_PBD_TO_ISO; break;
-                    case 'strategies': queryToExecute = queries.QUERY_STRATEGIA_NAME_TO_ISO; break;
-                    default: queryToExecute = queries.QUERY_GET_ALL_ISO;
-                } break;
-
-            case 'cwes':
-                switch (categoryFrom) {
-                    case 'articoliGdprs': queryToExecute = queries.QUERY_ARTICOLO_TO_CWE; break;
-                    case 'isos': queryToExecute = queries.QUERY_ISO_TO_CWE; break;
-                    case 'cwes': queryToExecute = queries.QUERY_GET_CWE; break;
-                    case 'mvcs': queryToExecute = queries.QUERY_MVC_TO_CWE; break;
-                    case 'owasps': queryToExecute = queries.QUERY_OWASP_TO_CWE; break;
-                    case 'patterns':
-                        switch (att) {
-                            case 'Name': queryToExecute = queries.QUERY_PATTERN_NAME_TO_CWE; break;
-                            case 'Context': queryToExecute = queries.QUERY_PATTERN_CONTEXT_TO_CWE; break;
-                            case 'Description': queryToExecute = queries.QUERY_PATTERN_DESCRIPTION_TO_CWE; break;
-                            default:
-                        } break;
-                    case 'pbds': queryToExecute = queries.QUERY_PBD_TO_CWE; break;
-                    case 'strategies': queryToExecute = queries.QUERY_STRATEGY_NAME_TO_CWE; break;
-                    default: queryToExecute = queries.QUERY_GET_ALL_CWE;
-                } break;
-
-            case 'mvcs':
-                switch (categoryFrom) {
-                    case 'articoliGdprs': queryToExecute = queries.QUERY_ARTICOLO_TO_MVC; break;
-                    case 'isos': queryToExecute = queries.QUERY_ISO_TO_MVC; break;
-                    case 'cwes': queryToExecute = queries.QUERY_CWE_DESCRIPTION_TO_MVC; break;
-                    case 'mvcs': queryToExecute = queries.QUERY_GET_MVC; break;
-                    case 'owasps': queryToExecute = queries.QUERY_OWASP_TO_MVC; break;
-                    case 'patterns':
-                        switch (att) {
-                            case 'Name': queryToExecute = queries.QUERY_PATTERN_NAME_TO_MVC; break;
-                            case 'Context': queryToExecute = queries.QUERY_PATTERN_CONTEXT_TO_MVC; break;
-                            case 'Description': queryToExecute = queries.QUERY_PATTERN_DESCRIPTION_TO_MVC; break;
-                            default:
-                        } break;
-                    case 'pbds': queryToExecute = queries.QUERY_PBD_TO_MVC; break;
-                    case 'strategies': queryToExecute = queries.QUERY_STRATEGY_NAME_TO_MVC; break;
-                    default: queryToExecute = queries.QUERY_GET_ALL_MVC;
-                } break;
-
-            case 'owasps':
-                switch (categoryFrom) {
-                    case 'articoliGdprs': queryToExecute = queries.QUERY_ARTICOLO_TO_OWASP; break;
-                    case 'isos': queryToExecute = queries.QUERY_ISO_TO_OWASP; break;
-                    case 'cwes': queryToExecute = queries.QUERY_CWE_DESCRIPTION_TO_OWASP; break;
-                    case 'mvcs': queryToExecute = queries.QUERY_MVC_TO_OWASP; break;
-                    case 'owasps': queryToExecute = queries.QUERY_GET_OWASP; break;
-                    case 'patterns':
-                        switch (att) {
-                            case 'Name': queryToExecute = queries.QUERY_PATTERN_NAME_TO_OWASP; break;
-                            case 'Context': queryToExecute = queries.QUERY_PATTERN_CONTEXT_TO_OWASP; break;
-                            case 'Description': queryToExecute = queries.QUERY_PATTERN_DESCRIPTION_TO_OWASP; break;
-                            default:
-                        } break;
-                    case 'pbds': queryToExecute = queries.QUERY_PBD_TO_OWASP; break;
-                    case 'strategies': queryToExecute = queries.QUERY_STRATEGY_NAME_TO_OWASP; break;
-                    default: queryToExecute = queries.QUERY_GET_ALL_OWASP;
-                } break;
-
-            case 'patterns':
-                switch (categoryFrom) {
-                    case 'articoliGdprs': queryToExecute = queries.QUERY_ARTICOLO_TO_PATTERN; break;
-                    case 'isos': queryToExecute = queries.QUERY_ISO_TO_PATTERN; break;
-                    case 'cwes': queryToExecute = queries.QUERY_CWE_TO_PATTERN; break;
-                    case 'mvcs': queryToExecute = queries.QUERY_MVC_TO_PATTERN; break;
-                    case 'owasps': queryToExecute = queries.QUERY_OWASP_TO_PATTERN; break;
-                    case 'patterns':
-                        switch (att) {
-                            case 'Name': queryToExecute = queries.QUERY_GET_PATTERN_NAME; break;
-                            case 'Context': queryToExecute = queries.QUERY_GET_PATTERN_CONTEXT; break;
-                            case 'Description': queryToExecute = queries.QUERY_GET_PATTERN_DESCRIPTION; break;
-                            default:
-                        } break;
-                    case 'pbds': queryToExecute = queries.QUERY_PBD_TO_PATTERN; break;
-                    case 'strategies': queryToExecute = queries.QUERY_STRATEGY_NAME_TO_PATTERN; break;
-                    default: queryToExecute = queries.QUERY_GET_ALL_PATTERN;
-                } break;
-
-            case 'pbds':
-                switch (categoryFrom) {
-                    case 'articoliGdprs': queryToExecute = queries.QUERY_ARTICOLO_TO_PBD; break;
-                    case 'isos': queryToExecute = queries.QUERY_ISO_TO_PBD; break;
-                    case 'cwes': queryToExecute = queries.QUERY_CWE_TO_PBD; break;
-                    case 'mvcs': queryToExecute = queries.QUERY_MVC_TO_PBD; break;
-                    case 'owasps': queryToExecute = queries.QUERY_OWASP_TO_PBD; break;
-                    case 'patterns':
-                        switch (att) {
-                            case 'Name': queryToExecute = queries.QUERY_PATTERN_NAME_TO_PBD; break;
-                            case 'Context': queryToExecute = queries.QUERY_PATTERN_CONTEXT_TO_PBD; break;
-                            case 'Description': queryToExecute = queries.QUERY_PATTERN_DESCRIPTION_TO_PBD; break;
-                            default:
-                        } break;
-                    case 'pbds': queryToExecute = queries.QUERY_GET_PBD; break;
-                    case 'strategies': queryToExecute = queries.QUERY_STRATEGY_NAME_TO_PBD; break;
-                    default: queryToExecute = queries.QUERY_GET_ALL_PBD;
-                } break;
-
-            case 'strategies':
-                switch (categoryFrom) {
-                    case 'articoliGdprs': queryToExecute = queries.QUERY_ARTICOLO_TO_STRATEGY; break;
-                    case 'isos': queryToExecute = queries.QUERY_ISO_TO_STRATEGY; break;
-                    case 'cwes': queryToExecute = queries.QUERY_CWE_TO_STRATEGY; break;
-                    case 'mvcs': queryToExecute = queries.QUERY_MVC_TO_STRATEGY; break;
-                    case 'owasps': queryToExecute = queries.QUERY_OWASP_TO_STRATEGY; break;
-                    case 'patterns':
-                        switch (att) {
-                            case 'Name': queryToExecute = queries.QUERY_PATTERN_NAME_TO_STRATEGY; break;
-                            case 'Context': queryToExecute = queries.QUERY_PATTERN_CONTEXT_TO_STRATEGY; break;
-                            case 'Description': queryToExecute = queries.QUERY_PATTERN_DESCRIPTION_TO_STRATEGY; break;
-                            default:
-                        } break;
-                    case 'pbds': queryToExecute = queries.QUERY_PBD_TO_STRATEGY; break;
-                    case 'strategies': queryToExecute = queries.QUERY_GET_STRATEGY; break;
-                    default: queryToExecute = queries.QUERY_GET_ALL_STRATEGY;
-                } break;
-
-            default:
-                switch (categoryFrom) {
-                    case 'articoliGdprs': queryToExecute = queries.QUERY_GET_ARTICOLO; break;
-                    case 'isos': queryToExecute = queries.QUERY_GET_ISO; break;
-                    case 'cwes': queryToExecute = queries.QUERY_GET_CWE; break;
-                    case 'mvcs': queryToExecute = queries.QUERY_GET_MVC; break;
-                    case 'owasps': queryToExecute = queries.QUERY_GET_OWASP; break;
-                    case 'patterns':
-                        switch (att) {
-                            case 'Name': queryToExecute = queries.QUERY_GET_PATTERN_NAME; break;
-                            case 'Context': queryToExecute = queries.QUERY_GET_PATTERN_CONTEXT; break;
-                            case 'Description': queryToExecute = queries.QUERY_GET_PATTERN_DESCRIPTION; break;
-                            default:
-                        } break;
-                    case 'pbds': queryToExecute = queries.QUERY_GET_PBD; break;
-                    case 'strategies': queryToExecute = queries.QUERY_GET_STRATEGY; break;
-                    default:
-                }
-        }
-        if (queryToExecute) {
-            executeQuery({ query: queryToExecute, variables: { value } });
-        }
-    }, [categoryTo, categoryFrom, att, value, executeQuery]);
-    return {
-        data,
-        loading,
-        error
-    };
-};
+import BookmarkIcon from '@mui/icons-material/Bookmark';
+import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
+import Tooltip from '@mui/material/Tooltip';
 
 export default function SearchBar() {
     const [value, setValue] = useState('');
@@ -213,28 +27,22 @@ export default function SearchBar() {
     const [categoryFrom, setCategoryFrom] = useState('');
     const [filteredData, setFilteredData] = useState([]);
     const [att, setAtt] = useState('');
-    const { data, loading, error } = useDynamicQuery(categoryFrom, att, value, categoryTo);
     const [results, setResults] = useState([])
     const [isVisible, setIsVisible] = useState(true);
     const [open, setOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
-    const [showResults, setShowResults] = useState(true);
+    const [showResults, setShowResults] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
 
 
-    const { data: Articles, error: errorArticles } = useDataFetching(`${API_URL}/articoli-gdprs`);
-    const { data: ISOs, error: errorISOs } = useDataFetching(`${API_URL}/isos`);
-    const { data: CWEs, error: errorCWEs } = useDataFetching(`${API_URL}/cwes`);
-    const { data: MVCs, error: errorMVCs } = useDataFetching(`${API_URL}/mvcs`);
-    const { data: OWASPs, error: errorOWASPs } = useDataFetching(`${API_URL}/owasps`);
-    const { data: Patterns, error: errorPatterns } = useDataFetching(`${API_URL}/patterns`);
-    const { data: PBDs, error: errorPBDs } = useDataFetching(`${API_URL}/pbds`);
-    const { data: Strategies, error: errorStrategies } = useDataFetching(`${API_URL}/strategies`);
-
-    useEffect(() => {
-        if (errorArticles || errorISOs || errorCWEs || errorMVCs || errorOWASPs || errorPatterns || errorPBDs || errorStrategies) {
-            console.error('Error fetching data:', errorArticles || errorISOs || errorCWEs || errorMVCs || errorOWASPs || errorPatterns || errorPBDs || errorStrategies);
-        }
-    }, [errorArticles, errorISOs, errorCWEs, errorMVCs, errorOWASPs, errorPatterns, errorPBDs, errorStrategies]);
+    const { dataArticles } = useDataContext();
+    const { dataISOs } = useDataContext();
+    const { dataCWEs } = useDataContext();
+    const { dataMVCs } = useDataContext();
+    const { dataOWASPs } = useDataContext();
+    const { dataPatterns } = useDataContext();
+    const { dataPBDs } = useDataContext();
+    const { dataStrategies } = useDataContext();
 
     const handleChange = (event) => {
         setCategoryTo(event.target.value);
@@ -244,6 +52,7 @@ export default function SearchBar() {
     const handleOpen = (item) => {
         setSelectedItem(item);
         setOpen(true);
+        setIsSaved(false);
     };
     const toggleResults = () => setShowResults(!showResults);
 
@@ -263,170 +72,170 @@ export default function SearchBar() {
     };
 
     const handleSearch = useCallback(async () => {
-        if (!loading && !error && data) {
-            setIsVisible(false);
-            console.log("Data received:", data);
-            const resApp = [];
-            var categoryDataFrom;
-            if (categoryFrom) {
-                categoryDataFrom = data?.[categoryFrom]?.data?.[0]?.attributes;
+        const resApp = [];
+        var categoryFromResponse = [];
+        var patternsResponse = [];
+        var categoryFromData = [];
+        var categoryFromId = [];
+        var patternsData = [];
+        var patternIds = [];
+        var query = '';
+        var CategoryToResponse = [];
+        var CategoryToData = [];
+
+        if ((!categoryTo && !categoryFrom) || ((categoryFrom === '' || value === '') && categoryTo === '')) {
+            console.log('no results');
+            return;
+        }
+        if
+            ((categoryFrom && !categoryTo) || (categoryTo === '' && categoryFrom !== '')) {
+            console.log('no to')
+            categoryFromResponse = await fetch(`${API_URL}/${categoryFrom}?filters[${att}][$eq]=${value}`);
+            categoryFromData = await categoryFromResponse.json();
+            for (var i = 0; i < categoryFromData.data.length; i++) {
+                resApp.push(categoryFromData.data[i].attributes);
+            }
+        } else if ((!categoryFrom && categoryTo) || (categoryFrom === '' && categoryTo !== '')) {
+            console.log('no from')
+            if (categoryTo === 'articoli_gdprs') {
+                categoryFromResponse = await fetch(`${API_URL}/articoli-gdprs`);
             } else {
-                categoryDataFrom = data?.['patterns']?.data?.[0]?.attributes;
+                categoryFromResponse = await fetch(`${API_URL}/${categoryTo}`);
             }
-
-
-            switch (categoryFrom) {
-                case 'patterns':
-                    switch (categoryTo) {
-                        case '': case 'patterns':
-                            resApp.push(categoryDataFrom);
-                            break;
-                        default:
-                            let length = categoryDataFrom[categoryTo].data.length;
-                            for (let i = 0; i < length; i++) {
-                                resApp.push(categoryDataFrom[categoryTo].data[i].attributes);
-                            }
-                            break;
+            categoryFromData = await categoryFromResponse.json();
+            for (i = 0; i < categoryFromData.data.length; i++) {
+                resApp.push(categoryFromData.data[i].attributes);
+            }
+        }
+        else if ((categoryFrom && categoryTo) || (categoryFrom !== '' && categoryFrom !== '')) {
+            if (categoryTo === categoryFrom) {
+                console.log('uguali')
+                if (categoryTo !== 'patterns') {
+                    categoryFromResponse = await fetch(`${API_URL}/${categoryFrom}?filters[${att}][$eq]=${value}`);
+                    categoryFromData = await categoryFromResponse.json();
+                    categoryFromId = categoryFromData.data[0].id;
+                    console.log(categoryFromData);
+                    for (i = 0; i < categoryFromData.data.length; i++) {
+                        resApp.push(categoryFromData.data[i].attributes);
                     }
-                    break;
-                case '':
-                    if (categoryTo === 'articoli_gdprs') {
-                        let length = data['articoliGdprs'].data.length;
-                        for (let i = 0; i < length; i++) {
-                            resApp.push(data['articoliGdprs'].data[i].attributes);
+                } else {
+                    categoryFromResponse = await fetch(`${API_URL}/${categoryFrom}`);
+                    categoryFromData = await categoryFromResponse.json();
+                    for(i = 0; i < categoryFromData.data.length; i++){
+                        if(categoryFromData.data[i].attributes.Name === value){
+                            resApp.push(categoryFromData.data[i].attributes);
+                        } else if(categoryFromData.data[i].attributes.Context === value){
+                            resApp.push(categoryFromData.data[i].attributes);
+                        } else if(categoryFromData.data[i].attributes.Description === value){
+                            resApp.push(categoryFromData.data[i].attributes);
                         }
+                    }
+                }
+            }
+            else if (categoryTo !== categoryFrom && categoryTo !== 'patterns' && categoryFrom !== '' && categoryFrom !== 'patterns' && categoryTo !== '' && value !== '') {
+                categoryFromResponse = await fetch(`${API_URL}/${categoryFrom}?filters[${att}][$eq]=${value}`);
+                categoryFromData = await categoryFromResponse.json();
+                categoryFromId = categoryFromData.data[0].id;
+                if (categoryFrom === 'articoli-gdprs' && categoryTo === 'articoli_gdprs') {
+                    for (i = 0; i < categoryFromData.data.length; i++) {
+                        resApp.push(categoryFromData.data[i].attributes);
+                    }
+                } else {
+                    if (categoryFrom === 'articoli-gdprs') {
+                        patternsResponse = await fetch(`${API_URL}/patterns?filters[articoli_gdprs][id][$eq]=${categoryFromId}`);
                     } else {
-                        let length = data?.[categoryTo]?.data?.length;
-                        for (let i = 0; i < length; i++) {
-                            resApp.push(data?.[categoryTo]?.data?.[i]?.attributes);
-                        }
+                        patternsResponse = await fetch(`${API_URL}/patterns?filters[${categoryFrom}][id][$eq]=${categoryFromId}`);
                     }
-                    break;
-                default:
-                    if ((categoryTo === categoryFrom) || (categoryTo === 'articoli_gdprs' && categoryFrom === 'articoliGdprs')) {
-                        resApp.push(categoryDataFrom);
+                    patternsData = await patternsResponse.json();
+                    patternIds = patternsData.data.map(pattern => pattern.id);
+                    query = patternIds.map(id => `filters[patterns][id][$eq]=${id}`).join('&');
+                    if (categoryTo === 'articoli_gdprs') {
+                        CategoryToResponse = await fetch(`${API_URL}/articoli-gdprs?${query}`);
+                    } else {
+                        CategoryToResponse = await fetch(`${API_URL}/${categoryTo}?${query}`);
                     }
-                    else {
-                        let lengthP;
-                        switch (categoryTo) {
-                            case '':
-                                resApp.push(categoryDataFrom);
-                                break;
-                            case 'patterns':
-                                let length = categoryDataFrom[categoryTo]?.data?.length;
-                                for (let i = 0; i < length; i++) {
-                                    resApp.push(categoryDataFrom[categoryTo].data[i].attributes);
-                                }
-                                break;
-                            case 'articoli_gdprs':
-                                lengthP = categoryDataFrom.patterns.data.length;
-                                let lengthA;
-                                for (let i = 0; i < lengthP; i++) {
-                                    lengthA = categoryDataFrom.patterns.data[i].attributes.articoli_gdprs.data.length;
-                                    for (let j = 0; j < lengthA; j++) {
-                                        resApp.push(categoryDataFrom.patterns.data[i].attributes.articoli_gdprs.data[j].attributes);
-                                    }
-                                }
-                                break;
-                            case 'isos':
-                                lengthP = categoryDataFrom.patterns.data.length;
-                                let lengthI;
-                                for (let i = 0; i < lengthP; i++) {
-                                    lengthI = categoryDataFrom.patterns.data[i].attributes.isos.data.length;
-                                    for (let j = 0; j < lengthI; j++) {
-                                        resApp.push(categoryDataFrom.patterns.data[i].attributes.isos.data[j].attributes);
-                                    }
-                                }
-                                break;
-                            case 'cwes':
-                                lengthP = categoryDataFrom.patterns.data.length;
-                                let lengthC;
-                                for (let i = 0; i < lengthP; i++) {
-                                    lengthC = categoryDataFrom.patterns.data[i].attributes.cwes.data.length;
-                                    for (let j = 0; j < lengthC; j++) {
-                                        resApp.push(categoryDataFrom.patterns.data[i].attributes.cwes.data[j].attributes);
-                                    }
-                                }
-                                break;
-                            case 'mvcs':
-                                lengthP = categoryDataFrom.patterns.data.length;
-                                let lengthM;
-                                for (let i = 0; i < lengthP; i++) {
-                                    lengthM = categoryDataFrom.patterns.data[i].attributes.mvcs.data.length;
-                                    for (let j = 0; j < lengthM; j++) {
-                                        resApp.push(categoryDataFrom.patterns.data[i].attributes.mvcs.data[j].attributes);
-                                    }
-                                }
-                                break;
-                            case 'owasps':
-                                lengthP = categoryDataFrom.patterns.data.length;
-                                let lengthO;
-                                for (let i = 0; i < lengthP; i++) {
-                                    lengthO = categoryDataFrom.patterns.data[i].attributes.owasps.data.length;
-                                    for (let j = 0; j < lengthO; j++) {
-                                        resApp.push(categoryDataFrom.patterns.data[i].attributes.owasps.data[j].attributes);
-                                    }
-                                }
-                                break;
-                            case 'strategies':
-                                lengthP = categoryDataFrom.patterns.data.length;
-                                let lengthS;
-                                for (let i = 0; i < lengthP; i++) {
-                                    lengthS = categoryDataFrom.patterns.data[i].attributes.strategies.data.length;
-                                    for (let j = 0; j < lengthS; j++) {
-                                        resApp.push(categoryDataFrom.patterns.data[i].attributes.strategies.data[j].attributes);
-                                    }
-                                }
-                                break;
-                            case 'pbds':
-                                lengthP = categoryDataFrom.patterns.data.length;
-                                let lengthPb;
-                                for (let i = 0; i < lengthP; i++) {
-                                    lengthPb = categoryDataFrom.patterns.data[i].attributes.pbds.data.length;
-                                    for (let j = 0; j < lengthPb; j++) {
-                                        resApp.push(categoryDataFrom.patterns.data[i].attributes.pbds.data[j].attributes);
-                                    }
-                                }
-                                break;
-                            default: console.log("Unexpected value of categoyTo");
-                        }
+                    CategoryToData = await CategoryToResponse.json();
+                    for (i = 0; i < CategoryToData.data.length; i++) {
+                        resApp.push(CategoryToData.data[i].attributes);
                     }
+                }
             }
-            const res = removeDuplicates(resApp);
-            setResults(res);
-
-            const token = localStorage.getItem('token');
-            if (token) {
-                try {
-                    const response = await fetch(`${API_URL}/users/me`, {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    });
-                    if (!response.ok) {
-                        throw new Error('Failed to fetch user data');
+            else if (categoryTo !== categoryFrom && categoryTo === 'patterns' && categoryTo !== '' && (categoryFrom !== '' || value !== '')) {
+                console.log('diversi ma to patterns')
+                categoryFromResponse = await fetch(`${API_URL}/${categoryFrom}?filters[${att}][$eq]=${value}`);
+                categoryFromData = await categoryFromResponse.json();
+                categoryFromId = categoryFromData.data[0].id;
+                if (categoryFrom === 'articoli-gdprs') {
+                    patternsResponse = await fetch(`${API_URL}/patterns?filters[articoli_gdprs][id][$eq]=${categoryFromId}`);
+                } else {
+                    patternsResponse = await fetch(`${API_URL}/patterns?filters[${categoryFrom}][id][$eq]=${categoryFromId}`);
+                }
+                patternsData = await patternsResponse.json();
+                for (i = 0; i < patternsData.data.length; i++) {
+                    resApp.push(patternsData.data[i].attributes);
+                }
+            } else if (categoryTo !== categoryFrom && categoryTo !== 'patterns' && categoryFrom === 'patterns' && categoryTo !== '') {
+                console.log('diversi ma from patterns')
+                categoryFromResponse = await fetch(`${API_URL}/${categoryFrom}`);
+                categoryFromData = await categoryFromResponse.json();
+                for(i = 0; i < categoryFromData.data.length; i++){
+                    if(categoryFromData.data[i].attributes.Name === value){
+                        patternIds = categoryFromData.data[i].id;
+                    } else if(categoryFromData.data[i].attributes.Context === value){
+                        patternIds = categoryFromData.data[i].id;
+                    } else if(categoryFromData.data[i].attributes.Description === value){
+                        patternIds = categoryFromData.data[i].id;
                     }
-                    const userData = await response.json();
-                    const requestData = {
-                        data: {
-                            Query: `${value}:${categoryTo}`,
-                            username: `${userData.username}`
-                        }
-                    };
-                    const logResponse = await axios.post(`${API_URL}/logs`, requestData, {
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json',
-                        }
-                    });
-                    console.log("Log response:", logResponse.data);
-                } catch (error) {
-                    console.error('Error fetching or logging data:', error);
+                }
+                query = `filters[patterns][id][$eq]=${patternIds}`;
+                if (categoryTo === 'articoli_gdprs') {
+                    CategoryToResponse = await fetch(`${API_URL}/articoli-gdprs?${query}`);
+                } else {
+                    CategoryToResponse = await fetch(`${API_URL}/${categoryTo}?${query}`);
+                }
+                CategoryToData = await CategoryToResponse.json();
+                for (i = 0; i < CategoryToData.data.length; i++) {
+                    resApp.push(CategoryToData.data[i].attributes);
                 }
             }
         }
-    }, [error, loading, data, categoryFrom, categoryTo, value]);
+        const filteredResApp = resApp.map(item => {
+            const { createdAt, updatedAt, publishedAt, ...rest } = item;
+            return rest;
+        });
+        const res = removeDuplicates(filteredResApp);
+        setResults(res);
+        const token = localStorage.getItem('token');
+        if (token) {
+            try {
+                const response = await fetch(`${API_URL}/users/me`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user data');
+                }
+                const userData = await response.json();
+                const requestData = {
+                    data: {
+                        Query: `${value}:${categoryTo}`,
+                        username: `${userData.username}`
+                    }
+                };
+                await axios.post(`${API_URL}/logs`, requestData, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    }
+                });
+            } catch (error) {
+                console.error('Error fetching or logging data:', error);
+            }
+        }
+        setShowResults(true);
+    }, [categoryFrom, categoryTo, value, att]);
 
 
     const removeDuplicates = (data) => {
@@ -445,37 +254,37 @@ export default function SearchBar() {
         if (value.trim() !== '') {
             const lowerValue = value.toLowerCase().trim();
 
-            const filteredArticles = Articles?.data.filter(item =>
+            const filteredArticles = dataArticles?.data.filter(item =>
                 item.attributes.Articolo.toLowerCase().includes(lowerValue)
             ) || [];
 
-            const filteredISOs = ISOs?.data.filter(item =>
+            const filteredISOs = dataISOs?.data.filter(item =>
                 item.attributes.Iso.toLowerCase().includes(lowerValue)
             ) || [];
 
-            const filteredCWEs = CWEs?.data.filter(item =>
+            const filteredCWEs = dataCWEs?.data.filter(item =>
                 item.attributes.Descrizione.toLowerCase().includes(lowerValue)
             ) || [];
 
-            const filteredMVCs = MVCs?.data.filter(item =>
+            const filteredMVCs = dataMVCs?.data.filter(item =>
                 item.attributes.MVC.toLowerCase().includes(lowerValue)
             ) || [];
 
-            const filteredOWASPs = OWASPs?.data.filter(item =>
+            const filteredOWASPs = dataOWASPs?.data.filter(item =>
                 item.attributes.owasp.toLowerCase().includes(lowerValue)
             ) || [];
 
-            const filteredPatterns = Patterns?.data.filter(item =>
+            const filteredPatterns = dataPatterns?.data.filter(item =>
                 item.attributes.Name.toLowerCase().includes(lowerValue) ||
                 item.attributes.Context.toLowerCase().includes(lowerValue) ||
                 item.attributes.Description.toLowerCase().includes(lowerValue)
             ) || [];
 
-            const filteredPBDs = PBDs?.data.filter(item =>
+            const filteredPBDs = dataPBDs?.data.filter(item =>
                 item.attributes.PBD.toLowerCase().includes(lowerValue)
             ) || [];
 
-            const filteredStrategies = Strategies?.data.filter(item =>
+            const filteredStrategies = dataStrategies?.data.filter(item =>
                 item.attributes.Name.toLowerCase().includes(lowerValue)
             ) || [];
 
@@ -494,14 +303,18 @@ export default function SearchBar() {
         } else {
             setFilteredData([]);
         }
-    }, [value, Articles, ISOs, CWEs, MVCs, OWASPs, Patterns, PBDs, Strategies]);
+    }, [value, dataArticles, dataISOs, dataCWEs, dataMVCs, dataOWASPs, dataPatterns, dataPBDs, dataStrategies]);
 
     useEffect(() => {
         filterData();
-    }, [value, Articles, ISOs, CWEs, MVCs, OWASPs, Patterns, PBDs, Strategies, filterData]);
+    }, [value, dataArticles, dataISOs, dataCWEs, dataMVCs, dataOWASPs, dataPatterns, dataPBDs, dataStrategies, filterData]);
 
     const onChange = (e) => {
         setValue(e.target.value);
+        if (e.target.value === '') {
+            setAtt('');
+            setCategoryFrom('');
+        }
         setIsVisible(true);
     };
 
@@ -513,7 +326,7 @@ export default function SearchBar() {
 
         switch (item.type) {
             case 'Articolo':
-                return [{ label: item.attributes.Articolo, onClick: () => handleAttributeClick('Articolo', 'articoliGdprs') }];
+                return [{ label: item.attributes.Articolo, onClick: () => handleAttributeClick('Articolo', 'articoli-gdprs') }];
             case 'ISO':
                 return [{ label: item.attributes.Iso, onClick: () => handleAttributeClick('Iso', 'isos') }];
             case 'CWE':
@@ -552,6 +365,81 @@ export default function SearchBar() {
         }
     };
 
+    const handleBookmarkClick = async (pattern) => {
+        const token = localStorage.getItem('token');
+        var userData, patternIds;
+        if (token) {
+            try {
+                const response = await fetch(`${API_URL}/users/me`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user data');
+                }
+                userData = await response.json();
+            } catch (error) {
+                console.error('Error fetching or logging data:', error);
+                return;
+            }
+    
+            if (isSaved === false) {
+                try {
+                    const requestData = {
+                        data: {
+                            username: userData.username,
+                            Name: pattern.Name,
+                            Context: pattern.Context,
+                            Description: pattern.Description,
+                            Example: pattern.Example
+                        }
+                    };
+                    await axios.post(`${API_URL}/preferitis`, requestData, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                        }
+                    });
+                    setIsSaved(true);
+                } catch (error) {
+                    console.error('Error saving pattern:', error);
+                }
+            } else {
+                try {
+                    const response = await fetch(`${API_URL}/preferitis?filters[username][$eq]=${userData.username}&filters[Name][$eq]=${pattern.Name}`);
+                    if (response.ok) {
+                        const patternsData = await response.json();
+                        patternIds = patternsData.data.map(pattern => pattern.id);
+                    } else {
+                        console.error('Error fetching patterns:', response.status, response.statusText);
+                    }
+                } catch (error) {
+                    console.error('Error fetching patterns:', error);
+                    return;
+                }
+    
+                for (const id of patternIds) {
+                    try {
+                        const response = await fetch(`${API_URL}/preferitis/${id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        if (response.ok) {
+                            setIsSaved(false);
+                        } else {
+                            console.error('Failed to delete pattern:', response.statusText);
+                        }
+                    } catch (error) {
+                        console.error('Error deleting pattern:', error);
+                    }
+                }
+            }
+        }
+    };
+
     return (
         <div style={{
             height: "100vh",
@@ -584,7 +472,7 @@ export default function SearchBar() {
                     value={value}
                     variant="outlined"
                     placeholder="Cerca nel PKB..."
-                    type="search"
+                    type='search'
                     sx={{
                         '& .MuiOutlinedInput-root': {
                             '& fieldset': {
@@ -613,7 +501,7 @@ export default function SearchBar() {
                         width: "100%",
                     }}
                 />
-                <FormControl sx={{ m: 1, minWidth: 150}}>
+                <FormControl sx={{ m: 1, minWidth: 150 }}>
                     <Select
                         onChange={handleChange}
                         value={categoryTo}
@@ -642,7 +530,7 @@ export default function SearchBar() {
                             '&:hover': { boxShadow: '0px 0px 15px #fa1e4e' }
                         }}
                     >
-                        <MenuItem value="" sx={menuItemStyle}> Categoria </MenuItem>
+                        <MenuItem value="" sx={menuItemStyle}> Category </MenuItem>
                         <MenuItem value="articoli_gdprs" sx={menuItemStyle}> Article </MenuItem>
                         <MenuItem value="isos" sx={menuItemStyle}> ISO </MenuItem>
                         <MenuItem value="cwes" sx={menuItemStyle}> CWE </MenuItem>
@@ -666,6 +554,7 @@ export default function SearchBar() {
                             onClick={() => {
                                 setValue(label.label);
                                 if (label.onClick) label.onClick();
+                                setIsVisible(false);
                             }}
                             key={`${item.type}-${item.id}-${index}`}
                             sx={{
@@ -704,56 +593,64 @@ export default function SearchBar() {
                 )}
             </Box>
             <Box>
-            <IconButton onClick={toggleResults} sx={{ color: '#ffffff', marginBottom: '10px' }}>
-                {showResults && <CloseIcon />}
-                {!showResults && <ExpandMoreIcon />}
-            </IconButton>
-            {showResults && (
-                <Box sx={{ overflowY: 'auto', marginTop: '10px' }}>
-                    <Grid container spacing={1} style={{ width: '150vh', padding: 10, height: '30vh' }}>
-                        {results.map((item, index) => (
-                            <Grid item xs={12} sm={4} md={4} key={index}>
-                                <Card
-                                    style={{ height: '20vh', backgroundColor: '#1b1724', color: '#e7edf1', boxShadow: '0px 5px 10px #000000' }}
-                                    onClick={() => handleOpen(item)}
-                                >
-                                    <CardContent>
-                                        {Object.keys(item).map((key) => (
-                                            <Typography key={key} variant="body2" component="p">
-                                                {key}: {item[key]}
-                                            </Typography>
-                                        ))}
-                                    </CardContent>
-                                </Card>
-                            </Grid>
-                        ))}
-                    </Grid>
-                </Box>
-            )}
-            <Modal open={open} onClose={handleClose}>
-                <Box sx={modalStyle}>
-                    <IconButton
-                        onClick={handleClose}
-                        sx={{ position: 'absolute', top: 8, right: 8, color: '#ffffff' }}
-                    >
-                        <CloseIcon />
-                    </IconButton>
-                    <Typography id="modal-title" variant="h4" component="h4" color="customTextColor.main" sx={{ paddingBottom: 1 }}>
-                        Details
-                    </Typography>
-                    {selectedItem && (
-                        <CardContent>
-                            {Object.keys(selectedItem).map((key) => (
-                                <Typography key={key} variant="body2" component="p"><br></br>
-                                    <Typography color = "customTextColor.main">{key}:</Typography>
-                                     {selectedItem[key]}  
-                                </Typography>
+                <IconButton onClick={toggleResults} sx={{ color: '#ffffff', marginBottom: '10px' }}>
+                    {showResults && <CloseIcon />}
+                    {!showResults && results[0] && <ExpandMoreIcon />}
+                </IconButton>
+                {showResults && (
+                    <Box sx={{ overflowY: 'auto', marginTop: '10px' }}>
+                        <Grid container spacing={1} style={{ width: '150vh', padding: 10, height: '30vh' }}>
+                            {results.map((item, index) => (
+                                <Grid item xs={12} sm={4} md={4} key={index}>
+                                    <Card
+                                        style={{ height: '20vh', backgroundColor: '#1b1724', color: '#e7edf1', boxShadow: '0px 5px 10px #000000', cursor: 'pointer' }}
+                                        onClick={() => handleOpen(item)}
+                                    >
+                                        <CardContent>
+                                            {Object.keys(item).map((key) => (
+                                                <Typography key={key} variant="body2" component="p">
+                                                    {key}: {item[key]}
+                                                </Typography>
+                                            ))}
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
                             ))}
-                        </CardContent>
-                    )}
-                </Box>
-            </Modal>
-        </Box>
+                        </Grid>
+                    </Box>
+                )}
+                <Modal open={open} onClose={handleClose}>
+                    <Box sx={modalStyle}>
+                        <IconButton
+                            onClick={handleClose}
+                            sx={{ position: 'absolute', top: 8, right: 8, color: '#ffffff' }}
+                        >
+                            <CloseIcon />
+                        </IconButton>
+                        {localStorage.getItem('token') && (categoryTo === 'patterns' || (categoryFrom === 'patterns' && (categoryTo === '' || !categoryTo)))  &&
+                        <IconButton
+                            onClick={() => handleBookmarkClick(selectedItem)}
+                            sx={{ color: 'customTextColor.main' }}
+                        >
+                            {isSaved
+                            ? <Tooltip title="Saved"><BookmarkIcon /></Tooltip> : <Tooltip title="Save"><BookmarkBorderIcon /></Tooltip>}
+                        </IconButton>}
+                        <Typography id="modal-title" variant="h4" component="h4" color="customTextColor.main" sx={{ paddingBottom: 1 }}>
+                            Details
+                        </Typography>
+                        {selectedItem && (
+                            <CardContent>
+                                {Object.keys(selectedItem).map((key) => (
+                                    <Typography key={key} variant="body2" component="div"><br></br>
+                                        <Typography color="customTextColor.main">{key}:</Typography>
+                                        {selectedItem[key]}
+                                    </Typography>
+                                ))}
+                            </CardContent>
+                        )}
+                    </Box>
+                </Modal>
+            </Box>
         </div>
     );
 }

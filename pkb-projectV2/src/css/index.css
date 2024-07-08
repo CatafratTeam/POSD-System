@@ -2,8 +2,34 @@ html,body,#root {
   height: 100%;
   margin: 0;
   padding: 0;
-  background-color: #131019;
   font-family: 'OCR A Std';
+  background: none;
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('../wallpaper2.jpg');
+  background-size: cover;
+  background-position: center;
+  filter: blur(30px); /* Apply blur effect */
+  z-index: -2; /* Ensure it's behind everything else */
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.329); /* Dark overlay with 50% opacity */
+  z-index: -1; /* Ensure it's in front of the blurred background */
 }
 
 @font-face {
@@ -24,7 +50,7 @@ select:-webkit-autofill,
 select:-webkit-autofill:hover,
 select:-webkit-autofill:focus {
   -webkit-text-fill-color: #e7edf1;
-  -webkit-box-shadow: 0 0 0px 1000px #0c0a10 inset;
+  -webkit-box-shadow: 0 0 0px 1000px transparent;
   transition: background-color 5000s ease-in-out 0s;
 }
 
@@ -75,14 +101,14 @@ select:-webkit-autofill:focus {
   color: #fa1e4e;
   color: #bf173c;
   color: #1b1724;
-  color: rgba(19, 16, 25, 0.5);
+  color: #13101980;
   color: #930bb6;
-  color: #7f089d;
+  color: #64077b;
   color: #71088b;
-  color: rgba(0, 0, 0, 0.5);
+  color: rgba(0, 0, 0, 0.505);
   color: #fff;
-  color: #ffffff80;
-  color: hsla(0, 0%, 100%, 0.15);
+  color: rgba(48, 48, 48, 0.252);
+  color: hsla(0, 0%, 0%, 0.15);
   color: #201b2c;
   color: #e7edf18c;
   color: #262032;
